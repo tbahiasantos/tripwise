@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
+import 'app_routes.dart';
 import 'theme/app_theme.dart';
-import 'screens/splash_screen.dart';
+import 'widgets/tw_widgets.dart';
 
 void main() {
   runApp(const TripWiseApp());
@@ -15,7 +17,9 @@ class TripWiseApp extends StatelessWidget {
       title: 'TripWise',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const SplashScreen(),
+      initialRoute: AppRoutes.splash,
+      onGenerateRoute: AppRoutes.onGenerateRoute,
+      builder: (context, child) => PhoneFrame(child: child!),
     );
   }
 }

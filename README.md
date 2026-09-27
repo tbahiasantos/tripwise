@@ -44,6 +44,35 @@ O sistema apresenta os destinos de acordo com seu nível de compatibilidade com 
 
 ---
 
+---
+
+## Sprint 2 · Interface do App
+
+| # | Tela | Arquivo |
+|---|------|---------|
+| 1 | Splash | `lib/screens/splash_screen.dart` |
+| 2 | **Tela inicial** | `lib/screens/welcome_screen.dart` |
+| 3 | Login | `lib/screens/login_screen.dart` |
+| 4 | **Cadastro** (com perfil de viajante) | `lib/screens/signup_screen.dart` |
+| 5 | Home | `lib/screens/home_screen.dart` |
+| 6 | Preferências (questionário do Travel Match) | `lib/screens/preferences_screen.dart` |
+| 7 | **Travel Match** (funcionalidade principal) | `lib/screens/match_screen.dart` |
+| 8 | Destino + estimativa de gastos | `lib/screens/destination_detail_screen.dart` |
+| 9 | Roteiro | `lib/screens/itinerary_screen.dart` |
+| 10 | **Sobre o App** | `lib/screens/about_screen.dart` |
+
+A navegação usa rotas nomeadas (`lib/app_routes.dart`) e uma barra inferior com Início, Match, Viagens e Sobre.
+
+### Como rodar
+
+```bash
+flutter pub get
+flutter run -d chrome     # ou um emulador Android
+flutter test
+```
+
+---
+
 ## Equipe
 
 * Ana Luiza Ribas
