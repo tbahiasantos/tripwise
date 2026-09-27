@@ -1,11 +1,11 @@
 {
-    "name": "tripwise",
-    "short_name": "tripwise",
+    "name": "TripWise",
+    "short_name": "TripWise",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FEF2E7",
+    "theme_color": "#88DBD3",
+    "description": "Planeje melhor. Viaje mais.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

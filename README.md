@@ -1,81 +1,96 @@
 <div align="center">
 
-# TripWise
+<img src="assets/images/logo.png" alt="TripWise" width="260">
 
-**Planeje melhor. Viaje mais.**
+### Planeje melhor. Viaje mais.
 
-Aplicação para recomendação e planejamento personalizado de viagens.
+Aplicativo de recomendação e planejamento personalizado de viagens.
+
+![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
+![Dart](https://img.shields.io/badge/Dart-3-0175C2?logo=dart&logoColor=white)
+![Plataformas](https://img.shields.io/badge/plataformas-Android%20%7C%20Web-2E7C64)
+![Status](https://img.shields.io/badge/status-Sprint%202-FD5B44)
 
 </div>
 
 ---
 
-## Sobre
+## Sobre o projeto
 
-O **TripWise** é uma aplicação que busca facilitar o planejamento de viagens por meio de recomendações personalizadas.
-
-Em vez de o usuário precisar escolher primeiro um destino e pesquisar separadamente por hospedagem, passeios, transporte e custos, o TripWise parte das características da viagem que ele deseja realizar.
-
-O usuário informa seu **perfil, preferências, período e orçamento**, e o sistema utiliza essas informações para encontrar destinos compatíveis.
+A maioria dos apps de viagem começa pela pergunta *“para onde você quer ir?”*. O **TripWise** inverte essa lógica: o usuário informa **perfil, preferências, orçamento e período**, e o app encontra os destinos mais compatíveis, com estimativa de custos e roteiro sugerido.
 
 > **O usuário não precisa saber para onde quer ir. Ele só precisa saber como quer viajar.**
 
----
-
-## Como funciona
-
 ```text
 Perfil + Preferências + Orçamento + Período
-                    |
-                    v
-             Travel Match
-                    |
-                    v
-        Destinos mais compatíveis
-                    |
-                    v
-        Planejamento da viagem
-                    |
-                    v
-                 Roteiro
+                    │
+                    ▼
+              Travel Match  ──►  destinos ordenados por % de compatibilidade
+                    │
+                    ▼
+     Estimativa de gastos  ──►  Roteiro dia a dia
 ```
 
-O sistema apresenta os destinos de acordo com seu nível de compatibilidade com o perfil informado pelo usuário.
+## Telas
 
----
+| Início | Cadastro | Home | Preferências |
+|:---:|:---:|:---:|:---:|
+| <img src="docs/screenshots/01-inicio.png" width="190"> | <img src="docs/screenshots/02-cadastro.png" width="190"> | <img src="docs/screenshots/03-home.png" width="190"> | <img src="docs/screenshots/04-preferencias.png" width="190"> |
+| **Travel Match** | **Destino** | **Roteiro** | **Sobre** |
+| <img src="docs/screenshots/05-travel-match.png" width="190"> | <img src="docs/screenshots/06-destino.png" width="190"> | <img src="docs/screenshots/07-roteiro.png" width="190"> | <img src="docs/screenshots/08-sobre.png" width="190"> |
 
----
+## Funcionalidades (Sprint 2)
 
-## Sprint 2 · Interface do App
+- **Onboarding:** splash, tela inicial, login e cadastro com validação de formulário e perfil de viajante
+- **Travel Match:** questionário (orçamento, duração, viajantes, tipo de viagem e prioridade) e ranking de destinos por compatibilidade
+- **Destino:** motivos do match e estimativa de gastos comparada ao orçamento
+- **Roteiro:** planejamento sugerido, dia a dia
+- **Navegação:** rotas nomeadas e barra inferior (Início · Match · Viagens · Sobre)
 
-| # | Tela | Arquivo |
-|---|------|---------|
-| 1 | Splash | `lib/screens/splash_screen.dart` |
-| 2 | **Tela inicial** | `lib/screens/welcome_screen.dart` |
-| 3 | Login | `lib/screens/login_screen.dart` |
-| 4 | **Cadastro** (com perfil de viajante) | `lib/screens/signup_screen.dart` |
-| 5 | Home | `lib/screens/home_screen.dart` |
-| 6 | Preferências (questionário do Travel Match) | `lib/screens/preferences_screen.dart` |
-| 7 | **Travel Match** (funcionalidade principal) | `lib/screens/match_screen.dart` |
-| 8 | Destino + estimativa de gastos | `lib/screens/destination_detail_screen.dart` |
-| 9 | Roteiro | `lib/screens/itinerary_screen.dart` |
-| 10 | **Sobre o App** | `lib/screens/about_screen.dart` |
+> Nesta sprint os destinos e custos são dados de exemplo (`lib/models/destination.dart`).
 
-A navegação usa rotas nomeadas (`lib/app_routes.dart`) e uma barra inferior com Início, Match, Viagens e Sobre.
+## Como executar
 
-### Como rodar
+Pré-requisito: [Flutter SDK](https://docs.flutter.dev/get-started/install) (canal stable).
 
 ```bash
 flutter pub get
-flutter run -d chrome     # ou um emulador Android
-flutter test
+flutter run -d chrome        # ou um emulador/dispositivo Android
+flutter test                 # testes de widget
 ```
 
----
+## Estrutura
+
+```text
+lib/
+├── main.dart                # MaterialApp, tema e rotas
+├── app_routes.dart          # rotas nomeadas e troca de abas
+├── models/                  # destinos, custos, roteiro e preferências
+├── screens/                 # telas do app
+├── theme/                   # cores, tipografia e ThemeData
+└── widgets/                 # componentes reutilizáveis
+assets/
+├── fonts/                   # Bebas Neue, DM Sans, Courier Prime
+└── images/                  # logo
+docs/
+├── apresentacao-tripwise.pdf        # apresentação do projeto
+├── sprint2-interface-do-app.pdf     # entrega da Sprint 2
+└── screenshots/
+test/
+```
+
+## Entregas
+
+| Etapa | Entrega | Material |
+|---|---|---|
+| Proposta | Apresentação do projeto | [`docs/apresentacao-tripwise.pdf`](docs/apresentacao-tripwise.pdf) |
+| Sprint 2 | Interface do app e navegação em Flutter | [`docs/sprint2-interface-do-app.pdf`](docs/sprint2-interface-do-app.pdf) |
 
 ## Equipe
 
-* Ana Luiza Ribas
-* Ana Paula Lopes
-* Débora Lino
-* Thiago Bahia
+Projeto Integrado · Desenvolvimento Móvel · PUC Minas · 2026/2
+
+- Ana Luiza Ribas
+- Ana Paula Lopes
+- Débora Lino
+- Thiago Bahia
