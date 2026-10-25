@@ -38,7 +38,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _abrir(String rota, {Object? args}) async {
     await Navigator.of(context).pushNamed(rota, arguments: args);
-    if (mounted) setState(() => _dados = _carregar());
+    if (!mounted) return;
+    setState(() {
+      _dados = _carregar();
+    });
   }
 
   @override
