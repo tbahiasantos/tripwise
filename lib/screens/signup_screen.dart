@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../app_routes.dart';
+import '../data/session.dart';
+import '../data/usuario_repository.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/primary_button.dart';
@@ -32,6 +34,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _confirmar = TextEditingController();
   final Set<String> _selecionados = {'Relax', 'Econômico'};
   bool _aceitouTermos = true;
+  bool _salvando = false;
 
   @override
   void dispose() {
@@ -41,7 +44,7 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  void _criarConta() {
+  Future<void> _criarConta() async {
     final valido = _formKey.currentState!.validate();
     if (!valido) return;
     if (_selecionados.isEmpty) {
@@ -52,8 +55,28 @@ class _SignupScreenState extends State<SignupScreen> {
       _aviso('Aceite os termos de uso para continuar.');
       return;
     }
-    Navigator.of(context)
-        .pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+    setState(() => _salvando = true);
+    try {
+      // CREATE: grava o usuário e os estilos no SQLite.
+      final id = await UsuarioRepository.cadastrar(
+        nome: _nome.text,
+        email: _email.text,
+        senha: _senha.text,
+        cidadeOrigem: _cidade.text,
+        estilos: [
+          for (final p in _perfis)
+            if (_selecionados.contains(p)) p
+        ],
+      );
+      await Session.entrar(id);
+      if (!mounted) return;
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+    } on UsuarioException catch (e) {
+      _aviso(e.mensagem);
+    } finally {
+      if (mounted) setState(() => _salvando = false);
+    }
   }
 
   void _aviso(String msg) => ScaffoldMessenger.of(context)
@@ -165,7 +188,10 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               ),
               const SizedBox(height: 14),
-              PrimaryButton(label: 'Criar conta', onPressed: _criarConta),
+              PrimaryButton(
+                label: _salvando ? 'Salvando…' : 'Criar conta',
+                onPressed: _salvando ? null : _criarConta,
+              ),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () =>

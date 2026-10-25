@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../app_routes.dart';
+import '../data/session.dart';
+import '../data/usuario_repository.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/primary_button.dart';
@@ -25,10 +27,25 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _entrar() {
+  bool _entrando = false;
+
+  Future<void> _entrar() async {
     if (!_formKey.currentState!.validate()) return;
-    Navigator.of(context)
-        .pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+    setState(() => _entrando = true);
+    try {
+      // READ: confere e-mail e hash da senha no SQLite.
+      final usuario = await UsuarioRepository.autenticar(_email.text, _senha.text);
+      await Session.entrar(usuario.id);
+      if (!mounted) return;
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+    } on UsuarioException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.mensagem)));
+    } finally {
+      if (mounted) setState(() => _entrando = false);
+    }
   }
 
   @override
@@ -101,7 +118,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const Spacer(),
                       const SizedBox(height: 16),
-                      PrimaryButton(label: 'Entrar', onPressed: _entrar),
+                      PrimaryButton(
+                          label: _entrando ? 'Entrando…' : 'Entrar',
+                          onPressed: _entrando ? null : _entrar),
                       const SizedBox(height: 10),
                       TextButton(
                         onPressed: () => Navigator.of(context)

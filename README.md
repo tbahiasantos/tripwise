@@ -9,7 +9,8 @@ Aplicativo de recomendação e planejamento personalizado de viagens.
 ![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3-0175C2?logo=dart&logoColor=white)
 ![Plataformas](https://img.shields.io/badge/plataformas-Android%20%7C%20Web-2E7C64)
-![Status](https://img.shields.io/badge/status-Sprint%202-FD5B44)
+![Status](https://img.shields.io/badge/status-Sprint%203-FD5B44)
+![SQLite](https://img.shields.io/badge/banco-SQLite-003B57?logo=sqlite&logoColor=white)
 
 </div>
 
@@ -47,7 +48,14 @@ Perfil + Preferências + Orçamento + Período
 - **Roteiro:** planejamento sugerido, dia a dia
 - **Navegação:** rotas nomeadas e barra inferior (Início · Match · Viagens · Sobre)
 
-> Nesta sprint os destinos e custos são dados de exemplo (`lib/models/destination.dart`).
+## Persistência (Sprint 3)
+
+- **SQLite** com `sqflite`: 10 tabelas criadas em `lib/data/schema.dart` (usuários, estilos, destinos, custos, roteiro modelo, buscas, viagens, itens do roteiro e favoritos), com chaves estrangeiras e `ON DELETE CASCADE`
+- **CRUD** em usuários (cadastro, login, perfil, exclusão de conta), viagens (planejar, listar, editar, excluir) e itens do roteiro (adicionar, editar, concluir, excluir)
+- **Sessão** do usuário com `shared_preferences`
+- Senhas guardadas como hash SHA-256
+- No navegador, o mesmo banco roda com `sqflite_common_ffi_web` (rode `dart run sqflite_common_ffi_web:setup` uma vez)
+- Testes do CRUD em banco em memória: `test/database_test.dart`
 
 ## Como executar
 
@@ -65,7 +73,8 @@ flutter test                 # testes de widget
 lib/
 ├── main.dart                # MaterialApp, tema e rotas
 ├── app_routes.dart          # rotas nomeadas e troca de abas
-├── models/                  # destinos, custos, roteiro e preferências
+├── data/                    # banco SQLite, repositórios (CRUD) e sessão
+├── models/                  # usuário, destino, viagem e preferências
 ├── screens/                 # telas do app
 ├── theme/                   # cores, tipografia e ThemeData
 └── widgets/                 # componentes reutilizáveis
@@ -75,6 +84,7 @@ assets/
 docs/
 ├── apresentacao-tripwise.pdf        # apresentação do projeto
 ├── sprint2-interface-do-app.pdf     # entrega da Sprint 2
+├── sprint3-armazenamento-e-persistencia.pdf
 └── screenshots/
 test/
 ```
@@ -85,6 +95,7 @@ test/
 |---|---|---|
 | Proposta | Apresentação do projeto | [`docs/apresentacao-tripwise.pdf`](docs/apresentacao-tripwise.pdf) |
 | Sprint 2 | Interface do app e navegação em Flutter | [`docs/sprint2-interface-do-app.pdf`](docs/sprint2-interface-do-app.pdf) |
+| Sprint 3 | Armazenamento e persistência (SQLite + CRUD) | [`docs/sprint3-armazenamento-e-persistencia.pdf`](docs/sprint3-armazenamento-e-persistencia.pdf) |
 
 ## Equipe
 

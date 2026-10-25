@@ -1,93 +1,148 @@
 import 'package:flutter/material.dart';
 
 import '../app_routes.dart';
-import '../models/destination.dart';
+import '../data/session.dart';
+import '../data/usuario_repository.dart';
+import '../data/viagem_repository.dart';
+import '../models/usuario.dart';
+import '../models/viagem.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/tw_widgets.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late Future<(Usuario?, Viagem?)> _dados;
+
+  @override
+  void initState() {
+    super.initState();
+    _dados = _carregar();
+  }
+
+  /// READ: usuário logado e próxima viagem, direto do SQLite.
+  Future<(Usuario?, Viagem?)> _carregar() async {
+    final id = Session.usuarioId;
+    if (id == null) return (null, null);
+    return (
+      await UsuarioRepository.buscarPorId(id),
+      await ViagemRepository.proxima(id),
+    );
+  }
+
+  Future<void> _abrir(String rota, {Object? args}) async {
+    await Navigator.of(context).pushNamed(rota, arguments: args);
+    if (mounted) setState(() => _dados = _carregar());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final proxima = mockDestinations.first;
     return Scaffold(
       bottomNavigationBar: const TwBottomNav(currentIndex: 0),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-          children: [
-            Row(
+        child: FutureBuilder(
+          future: _dados,
+          builder: (context, snap) {
+            final usuario = snap.data?.$1;
+            final proxima = snap.data?.$2;
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
               children: [
-                Image.asset('assets/images/logo_mark.png', width: 44),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Olá, viajante',
+                Row(
+                  children: [
+                    Image.asset('assets/images/logo_mark.png', width: 44),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Olá, viajante',
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary)),
+                          Text(usuario?.primeiroNome ?? '',
+                              style: const TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                    ),
+                    TwIconButton(
+                      icon: Icons.person_outline_rounded,
+                      tooltip: 'Meu perfil',
+                      onPressed: () => _abrir(AppRoutes.profile),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                const _MatchHero(),
+                const SizedBox(height: 22),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('PRÓXIMA VIAGEM', style: AppText.display(26)),
+                    TextButton(
+                      onPressed: () => AppRoutes.goToTab(context, 2),
+                      child: const Text('Minhas viagens',
                           style: TextStyle(
-                              fontSize: 13, color: AppColors.textSecondary)),
-                      Text('Marina',
-                          style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.w700)),
-                    ],
+                              color: AppColors.verdePetroleo,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                if (snap.connectionState != ConnectionState.done)
+                  const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (proxima == null)
+                  EmptyState(
+                    icon: Icons.luggage_outlined,
+                    titulo: 'Nenhuma viagem ainda',
+                    texto:
+                        'Faça seu Travel Match e salve a viagem que mais combinar com você.',
+                    acao: 'Fazer meu match',
+                    onAcao: () => AppRoutes.goToTab(context, 1),
+                  )
+                else
+                  TripTicketCard(
+                    viagem: proxima,
+                    onTap: () =>
+                        _abrir(AppRoutes.tripDetail, args: proxima.id),
                   ),
-                ),
-                TwIconButton(
-                  icon: Icons.notifications_none_rounded,
-                  tooltip: 'Notificações',
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Nenhuma notificação nova.')),
-                  ),
+                const SizedBox(height: 22),
+                Text('INSPIRE-SE POR ESTILO', style: AppText.display(26)),
+                const SizedBox(height: 12),
+                const Row(
+                  children: [
+                    Expanded(
+                        child: _StyleTile(
+                            label: 'Praia',
+                            icon: Icons.beach_access_outlined,
+                            color: AppColors.turquesa)),
+                    SizedBox(width: 10),
+                    Expanded(
+                        child: _StyleTile(
+                            label: 'Montanha',
+                            icon: Icons.landscape_outlined,
+                            color: AppColors.creme)),
+                    SizedBox(width: 10),
+                    Expanded(
+                        child: _StyleTile(
+                            label: 'Cidade',
+                            icon: Icons.location_city_outlined,
+                            color: AppColors.rosa)),
+                  ],
                 ),
               ],
-            ),
-            const SizedBox(height: 18),
-            const _MatchHero(),
-            const SizedBox(height: 22),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('PRÓXIMA VIAGEM', style: AppText.display(26)),
-                TextButton(
-                  onPressed: () => Navigator.of(context)
-                      .pushNamed(AppRoutes.itinerary, arguments: proxima),
-                  child: const Text('Ver roteiro',
-                      style: TextStyle(
-                          color: AppColors.verdePetroleo,
-                          fontWeight: FontWeight.w700)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            _NextTripCard(destino: proxima),
-            const SizedBox(height: 22),
-            Text('INSPIRE-SE POR ESTILO', style: AppText.display(26)),
-            const SizedBox(height: 12),
-            const Row(
-              children: [
-                Expanded(
-                    child: _StyleTile(
-                        label: 'Praia',
-                        icon: Icons.beach_access_outlined,
-                        color: AppColors.turquesa)),
-                SizedBox(width: 10),
-                Expanded(
-                    child: _StyleTile(
-                        label: 'Montanha',
-                        icon: Icons.landscape_outlined,
-                        color: AppColors.creme)),
-                SizedBox(width: 10),
-                Expanded(
-                    child: _StyleTile(
-                        label: 'Cidade',
-                        icon: Icons.location_city_outlined,
-                        color: AppColors.rosa)),
-              ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -168,82 +223,6 @@ class _MatchHero extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _NextTripCard extends StatelessWidget {
-  final Destination destino;
-
-  const _NextTripCard({required this.destino});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.branco,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: AppColors.borda),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => Navigator.of(context)
-            .pushNamed(AppRoutes.itinerary, arguments: destino),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 16, 12, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text('CNF',
-                              style: AppText.mono(13,
-                                  color: AppColors.textSecondary)),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8),
-                            child: Icon(Icons.flight_takeoff_rounded,
-                                size: 18, color: AppColors.coral),
-                          ),
-                          Text('BPS',
-                              style: AppText.mono(13,
-                                  color: AppColors.textSecondary)),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                          '${destino.name.toUpperCase()} · ${destino.state}',
-                          style: AppText.display(28)),
-                      const SizedBox(height: 4),
-                      const Text('12 – 16 nov · 2 pessoas · 5 dias',
-                          style: TextStyle(
-                              fontSize: 13, color: AppColors.textSecondary)),
-                    ],
-                  ),
-                ),
-              ),
-              Container(
-                width: 92,
-                color: AppColors.creme,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('${destino.matchPercent}%',
-                        style: AppText.display(30,
-                            color: AppColors.verdePetroleo)),
-                    const SizedBox(height: 2),
-                    Text('MATCH', style: AppText.mono(11)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

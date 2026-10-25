@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../app_routes.dart';
+import '../models/trip_preferences.dart';
+import '../models/viagem.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 
@@ -345,4 +347,196 @@ class PhoneFrame extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Cartão de embarque de uma viagem salva (Home e Minhas Viagens).
+class TripTicketCard extends StatelessWidget {
+  final Viagem viagem;
+  final VoidCallback? onTap;
+  final Widget? trailing;
+
+  const TripTicketCard(
+      {super.key, required this.viagem, this.onTap, this.trailing});
+
+  @override
+  Widget build(BuildContext context) {
+    final v = viagem;
+    return Material(
+      color: AppColors.branco,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: AppColors.borda),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 14, 8, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(dataCurta(v.dataIda).toUpperCase(),
+                              style: AppText.mono(12,
+                                  color: AppColors.textSecondary)),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 6),
+                            child: Icon(Icons.flight_takeoff_rounded,
+                                size: 16, color: AppColors.coral),
+                          ),
+                          Text(dataCurta(v.dataVolta).toUpperCase(),
+                              style: AppText.mono(12,
+                                  color: AppColors.textSecondary)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text('${v.destinoNome.toUpperCase()} · ${v.destinoUf}',
+                          style: AppText.display(26)),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${v.dias} dias · ${v.pessoas} ${v.pessoas == 1 ? 'pessoa' : 'pessoas'} · ${formatBRL(v.custoEstimado)}',
+                        style: const TextStyle(
+                            fontSize: 13, color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 6),
+                      StatusChip(status: v.status),
+                    ],
+                  ),
+                ),
+              ),
+              if (trailing != null) trailing!,
+              Container(
+                width: 78,
+                color: AppColors.creme,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('${v.matchPercent}%',
+                        style: AppText.display(28,
+                            color: AppColors.verdePetroleo)),
+                    Text('MATCH', style: AppText.mono(10)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Etiqueta colorida com o status da viagem.
+class StatusChip extends StatelessWidget {
+  final String status;
+
+  const StatusChip({super.key, required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final (bg, fg) = switch (status) {
+      'Confirmada' => (AppColors.menta, AppColors.verdeEscuro),
+      'Concluída' => (AppColors.prata, AppColors.azulMarinho),
+      _ => (AppColors.creme, const Color(0xFF7A5B00)),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+          color: bg, borderRadius: BorderRadius.circular(999)),
+      child: Text(status,
+          style: TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w700, color: fg)),
+    );
+  }
+}
+
+/// Estado vazio com ícone, texto e ação.
+class EmptyState extends StatelessWidget {
+  final IconData icon;
+  final String titulo;
+  final String texto;
+  final String? acao;
+  final VoidCallback? onAcao;
+
+  const EmptyState({
+    super.key,
+    required this.icon,
+    required this.titulo,
+    required this.texto,
+    this.acao,
+    this.onAcao,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TwCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Icon(icon, size: 36, color: AppColors.coral),
+          const SizedBox(height: 8),
+          Text(titulo.toUpperCase(),
+              textAlign: TextAlign.center, style: AppText.display(24)),
+          const SizedBox(height: 4),
+          Text(texto,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  fontSize: 14, color: AppColors.textSecondary, height: 1.4)),
+          if (acao != null) ...[
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: onAcao,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.azulMarinho,
+                minimumSize: const Size(0, 44),
+                textStyle: const TextStyle(
+                    fontWeight: FontWeight.w700, fontFamily: AppFonts.body),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text(acao!),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Pergunta de confirmação para ações destrutivas (DELETE).
+Future<bool> confirmar(BuildContext context,
+    {required String titulo,
+    required String mensagem,
+    String acao = 'Excluir'}) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: AppColors.offWhite,
+      title: Text(titulo),
+      content: Text(mensagem),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar')),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          style: FilledButton.styleFrom(backgroundColor: AppColors.coralEscuro),
+          child: Text(acao),
+        ),
+      ],
+    ),
+  );
+  return ok ?? false;
+}
+
+void mostrarAviso(BuildContext context, String mensagem) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(mensagem)));
 }

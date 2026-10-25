@@ -5,20 +5,23 @@ import 'models/trip_preferences.dart';
 import 'screens/about_screen.dart';
 import 'screens/destination_detail_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/itinerary_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/match_screen.dart';
+import 'screens/my_trips_screen.dart';
 import 'screens/preferences_screen.dart';
+import 'screens/profile_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/trip_detail_screen.dart';
+import 'screens/trip_form_screen.dart';
 import 'screens/welcome_screen.dart';
 
 /// Rotas nomeadas do app e a navegação entre as telas.
 ///
 /// Fluxo principal:
 /// splash → início → cadastro/login → home → preferências → match
-/// → destino → roteiro. A barra inferior leva a home, match,
-/// viagens e sobre.
+/// → destino → planejar viagem → minhas viagens → detalhe/roteiro.
+/// A barra inferior leva a home, match, viagens e sobre.
 class AppRoutes {
   AppRoutes._();
 
@@ -30,11 +33,14 @@ class AppRoutes {
   static const preferences = '/preferencias';
   static const match = '/match';
   static const destination = '/destino';
-  static const itinerary = '/roteiro';
+  static const tripForm = '/viagem/formulario';
+  static const myTrips = '/viagens';
+  static const tripDetail = '/viagem';
+  static const profile = '/perfil';
   static const about = '/sobre';
 
   /// Rotas acessíveis pela barra de navegação inferior, na ordem das abas.
-  static const tabs = [home, preferences, itinerary, about];
+  static const tabs = [home, preferences, myTrips, about];
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     final args = settings.arguments;
@@ -49,14 +55,14 @@ class AppRoutes {
           preferences:
               args is TripPreferences ? args : TripPreferences.initial(),
         ),
-      destination => DestinationDetailScreen(
-          destino: args is Destination ? args : mockDestinations.first,
-        ),
-      itinerary => ItineraryScreen(
-          destino: args is Destination ? args : mockDestinations.first,
-        ),
+      destination when args is MatchResult =>
+        DestinationDetailScreen(match: args),
+      tripForm when args is TripFormArgs => TripFormScreen(args: args),
+      myTrips => const MyTripsScreen(),
+      tripDetail when args is int => TripDetailScreen(viagemId: args),
+      profile => const ProfileScreen(),
       about => AboutScreen(showNav: args != false),
-      _ => const WelcomeScreen(),
+      _ => const HomeScreen(),
     };
     return MaterialPageRoute(builder: (_) => page, settings: settings);
   }

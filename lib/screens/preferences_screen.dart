@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../app_routes.dart';
+import '../data/destino_repository.dart';
+import '../data/session.dart';
+import '../data/usuario_repository.dart';
 import '../models/trip_preferences.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
@@ -22,6 +25,36 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   TripPreferences _prefs = TripPreferences.initial();
 
   void _update(TripPreferences p) => setState(() => _prefs = p);
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarUltimaBusca();
+  }
+
+  /// READ: preenche o questionário com a última busca salva ou, se não
+  /// houver, com a cidade de origem do cadastro.
+  Future<void> _carregarUltimaBusca() async {
+    final id = Session.usuarioId;
+    if (id == null) return;
+    final ultima = await DestinoRepository.ultimaBusca(id);
+    final usuario = await UsuarioRepository.buscarPorId(id);
+    if (!mounted) return;
+    setState(() {
+      _prefs = ultima ??
+          (usuario != null && usuario.cidadeOrigem.isNotEmpty
+              ? _prefs.copyWith(origem: usuario.cidadeOrigem)
+              : _prefs);
+    });
+  }
+
+  /// CREATE: grava a busca no histórico e abre o resultado do match.
+  Future<void> _buscar() async {
+    final id = Session.usuarioId;
+    if (id != null) await DestinoRepository.salvarBusca(id, _prefs);
+    if (!mounted) return;
+    Navigator.of(context).pushNamed(AppRoutes.match, arguments: _prefs);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,8 +190,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
             PrimaryButton(
               label: 'Encontrar meu match',
               icon: Icons.flight_takeoff_rounded,
-              onPressed: () => Navigator.of(context)
-                  .pushNamed(AppRoutes.match, arguments: _prefs),
+              onPressed: _buscar,
             ),
           ],
         ),

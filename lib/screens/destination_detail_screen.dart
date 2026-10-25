@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
 
 import '../app_routes.dart';
+import '../data/destino_repository.dart';
+import '../data/session.dart';
 import '../models/destination.dart';
 import '../models/trip_preferences.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/tw_widgets.dart';
+import 'trip_form_screen.dart';
 
 /// Detalhe do destino com motivos do match e estimativa de gastos.
 class DestinationDetailScreen extends StatefulWidget {
-  final Destination destino;
-  final int orcamento;
+  final MatchResult match;
 
-  const DestinationDetailScreen({
-    super.key,
-    required this.destino,
-    this.orcamento = 2500,
-  });
+  const DestinationDetailScreen({super.key, required this.match});
 
   @override
   State<DestinationDetailScreen> createState() =>
@@ -28,11 +26,37 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
   bool _salvo = false;
 
   @override
+  void initState() {
+    super.initState();
+    final id = Session.usuarioId;
+    if (id != null) {
+      // READ: o destino já está nos favoritos?
+      DestinoRepository.isFavorito(id, widget.match.destino.id).then((fav) {
+        if (mounted) setState(() => _salvo = fav);
+      });
+    }
+  }
+
+  /// CREATE/DELETE na tabela `favoritos`.
+  Future<void> _alternarFavorito() async {
+    final id = Session.usuarioId;
+    if (id == null) return;
+    final fav =
+        await DestinoRepository.alternarFavorito(id, widget.match.destino.id);
+    if (!mounted) return;
+    setState(() => _salvo = fav);
+    mostrarAviso(context,
+        fav ? 'Destino salvo nos favoritos.' : 'Removido dos favoritos.');
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final d = widget.destino;
-    final total = d.estimatedCost;
-    final uso = (total / widget.orcamento).clamp(0.0, 1.0);
-    final sobra = widget.orcamento - total;
+    final m = widget.match;
+    final d = m.destino;
+    final total = m.custo;
+    final orcamento = m.orcamento;
+    final uso = (total / orcamento).clamp(0.0, 1.0);
+    final sobra = orcamento - total;
 
     return Scaffold(
       body: ListView(
@@ -58,7 +82,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                           tooltip: _salvo ? 'Remover dos salvos' : 'Salvar destino',
                           background: AppColors.offWhite,
                           foreground: AppColors.coralEscuro,
-                          onPressed: () => setState(() => _salvo = !_salvo),
+                          onPressed: _alternarFavorito,
                         ),
                       ],
                     ),
@@ -94,7 +118,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                       ),
                       child: Column(
                         children: [
-                          Text('${d.matchPercent}%',
+                          Text('${m.percent}%',
                               style: AppText.display(28,
                                   color: AppColors.amarelo)),
                           Text('MATCH',
@@ -108,7 +132,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                 const SizedBox(height: 16),
                 const Text('Por que combina com você', style: AppText.label),
                 const SizedBox(height: 8),
-                for (final r in d.reasons)
+                for (final r in m.motivos)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
@@ -138,8 +162,8 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                             child: Text('ESTIMATIVA DE GASTOS',
                                 style: AppText.display(24)),
                           ),
-                          const Text('5 dias · 2 pessoas',
-                              style: TextStyle(
+                          Text('${m.dias} dias · ${m.pessoas} ${m.pessoas == 1 ? 'pessoa' : 'pessoas'}',
+                              style: const TextStyle(
                                   fontSize: 12,
                                   color: AppColors.textSecondary)),
                         ],
@@ -151,11 +175,14 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(c.label,
+                              Text(
+                                  c.unidade == 'noite'
+                                      ? '${c.label} (${m.dias > 1 ? m.dias - 1 : 1} noites)'
+                                      : c.label,
                                   style: const TextStyle(
                                       fontSize: 14,
                                       color: AppColors.textSecondary)),
-                              Text(formatBRL(c.valor),
+                              Text(formatBRL(c.totalPara(dias: m.dias, pessoas: m.pessoas)),
                                   style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700)),
@@ -189,7 +216,7 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                       const SizedBox(height: 6),
                       Text(
                         sobra >= 0
-                            ? '${(total / widget.orcamento * 100).round()}% do seu orçamento · sobra ${formatBRL(sobra)}'
+                            ? '${(total / orcamento * 100).round()}% do seu orçamento · sobra ${formatBRL(sobra)}'
                             : 'Passa ${formatBRL(-sobra)} do seu orçamento',
                         style: const TextStyle(
                             fontSize: 12, color: AppColors.textSecondary),
@@ -199,10 +226,11 @@ class _DestinationDetailScreenState extends State<DestinationDetailScreen> {
                 ),
                 const SizedBox(height: 20),
                 PrimaryButton(
-                  label: 'Montar roteiro',
+                  label: 'Planejar esta viagem',
                   icon: Icons.arrow_forward_rounded,
-                  onPressed: () => Navigator.of(context)
-                      .pushNamed(AppRoutes.itinerary, arguments: d),
+                  onPressed: () => Navigator.of(context).pushNamed(
+                      AppRoutes.tripForm,
+                      arguments: TripFormArgs.nova(m)),
                 ),
               ],
             ),

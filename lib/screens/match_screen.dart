@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app_routes.dart';
+import '../data/destino_repository.dart';
 import '../models/destination.dart';
 import '../models/trip_preferences.dart';
 import '../theme/app_colors.dart';
@@ -8,17 +9,34 @@ import '../theme/app_theme.dart';
 import '../widgets/tw_widgets.dart';
 
 /// Funcionalidade principal: ranking de destinos por compatibilidade.
-class MatchScreen extends StatelessWidget {
+class MatchScreen extends StatefulWidget {
   final TripPreferences preferences;
 
   const MatchScreen({super.key, required this.preferences});
 
+  @override
+  State<MatchScreen> createState() => _MatchScreenState();
+}
+
+class _MatchScreenState extends State<MatchScreen> {
   static const _medalhas = [AppColors.amarelo, AppColors.prata, AppColors.bronze];
+
+  /// READ: destinos do SQLite, avaliados com as preferências.
+  late final Future<List<MatchResult>> _resultados =
+      DestinoRepository.calcularMatch(widget.preferences);
+
+  TripPreferences get preferences => widget.preferences;
 
   @override
   Widget build(BuildContext context) {
-    final destinos = [...mockDestinations]
-      ..sort((a, b) => b.matchPercent.compareTo(a.matchPercent));
+    return FutureBuilder(
+      future: _resultados,
+      builder: (context, snap) => _build(context, snap.data),
+    );
+  }
+
+  Widget _build(BuildContext context, List<MatchResult>? resultados) {
+    final destinos = resultados ?? const <MatchResult>[];
 
     return Scaffold(
       backgroundColor: AppColors.turquesa,
@@ -49,7 +67,10 @@ class MatchScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 14),
-            Eyebrow('${destinos.length} destinos encontrados',
+            Eyebrow(
+                resultados == null
+                    ? 'Calculando seu match…'
+                    : '${destinos.length} destinos mais compatíveis',
                 color: AppColors.verdeEscuro),
             const SizedBox(height: 2),
             Text('SEU TRAVEL MATCH', style: AppText.display(44)),
@@ -77,8 +98,7 @@ class MatchScreen extends StatelessWidget {
               _MatchTicket(
                 rank: i + 1,
                 medalColor: _medalhas[i % _medalhas.length],
-                destino: destinos[i],
-                orcamento: preferences.orcamento,
+                match: destinos[i],
               ),
               const SizedBox(height: 12),
             ],
@@ -92,19 +112,18 @@ class MatchScreen extends StatelessWidget {
 class _MatchTicket extends StatelessWidget {
   final int rank;
   final Color medalColor;
-  final Destination destino;
-  final int orcamento;
+  final MatchResult match;
 
   const _MatchTicket({
     required this.rank,
     required this.medalColor,
-    required this.destino,
-    required this.orcamento,
+    required this.match,
   });
 
   @override
   Widget build(BuildContext context) {
-    final folga = orcamento - destino.estimatedCost;
+    final destino = match.destino;
+    final folga = match.folga;
     final dentro = folga >= 0;
 
     return Container(
@@ -124,7 +143,7 @@ class _MatchTicket extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => Navigator.of(context)
-              .pushNamed(AppRoutes.destination, arguments: destino),
+              .pushNamed(AppRoutes.destination, arguments: match),
           child: Column(
             children: [
               Padding(
@@ -155,7 +174,7 @@ class _MatchTicket extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('${destino.matchPercent}%',
+                        Text('${match.percent}%',
                             style: AppText.display(34,
                                 color: AppColors.verdePetroleo)),
                         Text('MATCH', style: AppText.mono(11)),
@@ -180,7 +199,7 @@ class _MatchTicket extends StatelessWidget {
                               fontSize: 13, color: AppColors.textSecondary),
                           children: [
                             TextSpan(
-                              text: formatBRL(destino.estimatedCost),
+                              text: formatBRL(match.custo),
                               style: const TextStyle(
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.azulMarinho),

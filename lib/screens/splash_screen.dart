@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../app_routes.dart';
+import '../data/session.dart';
+import '../data/usuario_repository.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 
@@ -16,10 +18,27 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed(AppRoutes.welcome);
-    });
+    _iniciar();
+  }
+
+  /// Se houver sessão salva (SharedPreferences) e o usuário existir no
+  /// banco, vai direto para a Home; senão, para a tela inicial.
+  Future<void> _iniciar() async {
+    final espera = Future.delayed(const Duration(seconds: 2));
+    var destino = AppRoutes.welcome;
+    try {
+      final id = await Session.carregar();
+      if (id != null && await UsuarioRepository.buscarPorId(id) != null) {
+        destino = AppRoutes.home;
+      } else if (id != null) {
+        await Session.sair();
+      }
+    } catch (e) {
+      debugPrint('Falha ao carregar sessão: $e');
+    }
+    await espera;
+    if (!mounted) return;
+    Navigator.of(context).pushReplacementNamed(destino);
   }
 
   @override

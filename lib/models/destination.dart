@@ -1,140 +1,115 @@
-/// Item da estimativa de gastos de um destino.
+/// Custo de referência de um destino (tabela `custos_destino`).
 class CostItem {
   final String label;
   final double valor;
 
-  const CostItem(this.label, this.valor);
+  /// `pessoa`, `noite` ou `pessoa_dia`.
+  final String unidade;
+
+  const CostItem(this.label, this.valor, this.unidade);
+
+  factory CostItem.fromMap(Map<String, Object?> m) => CostItem(
+        m['item'] as String,
+        (m['valor'] as num).toDouble(),
+        m['unidade'] as String,
+      );
+
+  /// Valor total para uma viagem de [dias] dias com [pessoas] pessoas.
+  double totalPara({required int dias, required int pessoas}) {
+    final noites = dias > 1 ? dias - 1 : 1;
+    final quartos = (pessoas / 2).ceil();
+    return switch (unidade) {
+      'noite' => valor * noites * quartos,
+      'pessoa_dia' => valor * pessoas * dias,
+      _ => valor * pessoas,
+    };
+  }
 }
 
-/// Um dia do roteiro sugerido.
+/// Um dia do roteiro sugerido (tabela `roteiro_modelo`).
 class DayPlan {
-  final String dia;
+  final int dia;
   final String titulo;
   final String descricao;
 
   const DayPlan(this.dia, this.titulo, this.descricao);
+
+  factory DayPlan.fromMap(Map<String, Object?> m) => DayPlan(
+        m['dia'] as int,
+        m['titulo'] as String,
+        (m['descricao'] as String?) ?? '',
+      );
 }
 
-/// Destino recomendado pelo Travel Match (dados mockados nesta sprint).
+/// Destino recomendável pelo Travel Match (tabela `destinos`).
 class Destination {
+  final int id;
   final String name;
   final String state;
-  final String category;
+  final List<String> categorias;
   final String travelInfo;
-  final int matchPercent;
   final String description;
-  final List<String> reasons;
+  final String highlight;
+  final int matchBase;
   final List<CostItem> costs;
   final List<DayPlan> itinerary;
 
   const Destination({
+    required this.id,
     required this.name,
     required this.state,
-    required this.category,
+    required this.categorias,
     required this.travelInfo,
-    required this.matchPercent,
     required this.description,
-    required this.reasons,
-    required this.costs,
-    required this.itinerary,
+    required this.highlight,
+    required this.matchBase,
+    this.costs = const [],
+    this.itinerary = const [],
   });
 
-  double get estimatedCost => costs.fold(0, (sum, c) => sum + c.valor);
+  factory Destination.fromMap(
+    Map<String, Object?> m, {
+    List<CostItem> costs = const [],
+    List<DayPlan> itinerary = const [],
+  }) =>
+      Destination(
+        id: m['id'] as int,
+        name: m['nome'] as String,
+        state: m['uf'] as String,
+        categorias: (m['categorias'] as String).split(','),
+        travelInfo: (m['info_transporte'] as String?) ?? '',
+        description: (m['descricao'] as String?) ?? '',
+        highlight: (m['destaque'] as String?) ?? '',
+        matchBase: m['match_base'] as int,
+        costs: costs,
+        itinerary: itinerary,
+      );
+
+  String get category => categorias.join(' + ').toLowerCase();
+
+  double custoPara({required int dias, required int pessoas}) => costs.fold(
+      0, (soma, c) => soma + c.totalPara(dias: dias, pessoas: pessoas));
 }
 
-const _roteiroPortoSeguro = [
-  DayPlan('DIA 1 · QUI 12', 'Chegada + passeio',
-      'Check-in e fim de tarde na Passarela do Álcool'),
-  DayPlan('DIA 2 · SEX 13', 'Praia + restaurante',
-      'Praia de Taperapuã e jantar com frutos do mar'),
-  DayPlan('DIA 3 · SÁB 14', 'Passeio de barco',
-      'Recife de Fora e pôr do sol no rio Buranhém'),
-  DayPlan('DIA 4 · DOM 15', 'Atrações locais',
-      'Centro Histórico e compras no centro'),
-  DayPlan('DIA 5 · SEG 16', 'Retorno', 'Café da manhã e voo de volta para BH'),
-];
+/// Resultado do Travel Match para um destino.
+class MatchResult {
+  final Destination destino;
+  final int percent;
+  final double custo;
+  final int orcamento;
+  final int dias;
+  final int pessoas;
+  final List<String> motivos;
 
-const mockDestinations = [
-  Destination(
-    name: 'Porto Seguro',
-    state: 'BA',
-    category: 'praia',
-    travelInfo: 'voo 1h50',
-    matchPercent: 94,
-    description:
-        'Praias tranquilas, clima quente o ano todo e boa estrutura pra quem busca economia sem abrir mão de conforto.',
-    reasons: [
-      'Praias tranquilas e mar quente em novembro',
-      'Cabe no seu orçamento para 2 pessoas',
-      'Voo direto de Belo Horizonte',
-    ],
-    costs: [
-      CostItem('Passagens', 980),
-      CostItem('Hospedagem (4 noites)', 750),
-      CostItem('Alimentação', 420),
-      CostItem('Passeios', 300),
-    ],
-    itinerary: _roteiroPortoSeguro,
-  ),
-  Destination(
-    name: "Arraial d'Ajuda",
-    state: 'BA',
-    category: 'praia',
-    travelInfo: 'voo + balsa',
-    matchPercent: 89,
-    description:
-        'Clima mais tranquilo que Porto Seguro, praias de águas calmas e vida noturna mais discreta.',
-    reasons: [
-      'Praias de águas calmas, ideais para descansar',
-      'Pousadas com bom custo-benefício',
-      'Pertinho de Porto Seguro, com mais sossego',
-    ],
-    costs: [
-      CostItem('Passagens', 980),
-      CostItem('Hospedagem (4 noites)', 640),
-      CostItem('Alimentação', 400),
-      CostItem('Passeios', 300),
-    ],
-    itinerary: [
-      DayPlan('DIA 1 · QUI 12', 'Chegada + balsa',
-          'Voo até Porto Seguro e travessia para Arraial'),
-      DayPlan('DIA 2 · SEX 13', 'Praia de Pitinga',
-          'Dia de praia e almoço pé na areia'),
-      DayPlan('DIA 3 · SÁB 14', 'Trancoso',
-          'Quadrado de Trancoso e pôr do sol'),
-      DayPlan('DIA 4 · DOM 15', 'Centrinho',
-          'Rua do Mucugê e artesanato local'),
-      DayPlan('DIA 5 · SEG 16', 'Retorno', 'Balsa e voo de volta para BH'),
-    ],
-  ),
-  Destination(
-    name: 'Salvador',
-    state: 'BA',
-    category: 'praia + cultura',
-    travelInfo: 'voo 1h30',
-    matchPercent: 83,
-    description:
-        'Centro histórico rico, gastronomia forte e boa opção pra combinar praia com cultura na mesma viagem.',
-    reasons: [
-      'Combina praia com cultura na mesma viagem',
-      'Passagens mais baratas saindo de BH',
-      'Gastronomia baiana famosa',
-    ],
-    costs: [
-      CostItem('Passagens', 820),
-      CostItem('Hospedagem (4 noites)', 650),
-      CostItem('Alimentação', 430),
-      CostItem('Passeios', 250),
-    ],
-    itinerary: [
-      DayPlan('DIA 1 · QUI 12', 'Chegada + Barra',
-          'Farol da Barra e pôr do sol'),
-      DayPlan('DIA 2 · SEX 13', 'Pelourinho',
-          'Centro Histórico e Elevador Lacerda'),
-      DayPlan('DIA 3 · SÁB 14', 'Praia do Flamengo',
-          'Dia de praia e acarajé no fim da tarde'),
-      DayPlan('DIA 4 · DOM 15', 'Rio Vermelho', 'Feirinha e restaurantes locais'),
-      DayPlan('DIA 5 · SEG 16', 'Retorno', 'Mercado Modelo e voo para BH'),
-    ],
-  ),
-];
+  const MatchResult({
+    required this.destino,
+    required this.percent,
+    required this.custo,
+    required this.orcamento,
+    required this.dias,
+    required this.pessoas,
+    required this.motivos,
+  });
+
+  double get folga => orcamento - custo;
+}
